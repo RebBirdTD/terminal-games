@@ -22,6 +22,21 @@ class Grid:
             return False
         return (x, y) not in self._cells
 
+    def set_terrain(self, x: int, y: int, char: str, color: str):
+        if self.in_bounds(x, y):
+            self._cells[(x, y)] = ("terrain", char, color)
+
+    def is_terrain(self, x: int, y: int) -> bool:
+        cell = self._cells.get((x, y))
+        return isinstance(cell, tuple) and len(cell) == 3 and cell[0] == "terrain"
+
+    def is_grass(self, x: int, y: int) -> bool:
+        """Check if cell contains a grass plant (can be overridden by other plants)."""
+        cell = self._cells.get((x, y))
+        if not isinstance(cell, tuple) or len(cell) != 3:
+            return False
+        return isinstance(cell[0], int) and cell[1] in (".", "v", "w", ",")
+
     def can_place(self, root_x: int, root_y: int, template: list[str]) -> bool:
         """Check if a template can be placed at root position.
         Template rows are bottom-to-top, each row centered on root_x.

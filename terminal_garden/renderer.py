@@ -9,6 +9,8 @@ COLORS = {
     "yellow": 5,
     "brown": 6,
     "magenta": 7,
+    "blue": 8,
+    "blue_fill": 9,
 }
 
 # Color definitions: (pair_index, fg, bg)
@@ -20,6 +22,8 @@ _COLOR_DEFS = {
     "yellow": (5, curses.COLOR_YELLOW, -1),
     "brown": (6, curses.COLOR_RED, -1),  # closest to brown in basic curses
     "magenta": (7, curses.COLOR_MAGENTA, -1),
+    "blue": (8, curses.COLOR_BLUE, -1),
+    "blue_fill": (9, curses.COLOR_WHITE, curses.COLOR_CYAN),
 }
 
 
@@ -50,20 +54,37 @@ def render_frame(stdscr, grid, plants, cursor_x, cursor_y, status_text):
     stdscr.erase()
     max_y, max_x = stdscr.getmaxyx()
 
+    # Draw ground
+    ground_attr = curses.color_pair(COLORS["brown"]) | curses.A_DIM
+    for y in range(max_y - 1):
+        for x in range(max_x):
+            if grid.is_empty(x, y):
+                try:
+                    stdscr.addch(y, x, ".", ground_attr)
+                except curses.error:
+                    pass
+
     # Draw all occupied cells from grid
     for (x, y), cell in grid._cells.items():
         if 0 <= y < max_y - 1 and 0 <= x < max_x:
             if isinstance(cell, tuple):
-                plant_id, ch, color_name = cell
+                first, ch, color_name = cell
                 try:
                     stdscr.addch(y, x, ch, get_color_attr(color_name))
                 except curses.error:
                     pass  # ignore edge-of-screen errors
 
-    # Draw cursor
+    # Draw cursor - show plant char underneath if occupied, otherwise "+"
     if 0 <= cursor_y < max_y - 1 and 0 <= cursor_x < max_x:
+        cell = grid.get(cursor_x, cursor_y)
+        if cell and isinstance(cell, tuple):
+            _, ch, color_name = cell
+            attr = get_color_attr(color_name) | curses.A_REVERSE
+        else:
+            ch = "+"
+            attr = curses.A_REVERSE | curses.A_BLINK
         try:
-            stdscr.addch(cursor_y, cursor_x, ord("+"), curses.A_REVERSE | curses.A_BLINK)
+            stdscr.addch(cursor_y, cursor_x, ch, attr)
         except curses.error:
             pass
 

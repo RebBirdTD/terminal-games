@@ -12,7 +12,14 @@ class Stage(IntEnum):
 # Each stage has:
 #   - template: list of strings, each string is one row (relative to root at bottom-center)
 #   - duration: ticks this stage lasts (-1 = permanent/final)
-#   - color: curses color pair index to use
+# Each plant type also has:
+#   - colors: default color per stage (fallback)
+#   - char_colors: per-character color overrides (char -> color name)
+
+TERRAIN_TYPES = {
+    "water": {"char": "~", "color": "blue_fill"},
+    "rock": {"char": "#", "color": "white"},
+}
 
 PLANT_TYPES = {
     "grass": {
@@ -28,19 +35,44 @@ PLANT_TYPES = {
             Stage.BLOOM: "bright_green",
             Stage.WILT: "brown",
         },
+        "char_colors": {},
     },
     "flower": {
         "stages": [
             {"template": ["."], "duration": 5},
-            {"template": ["|"], "duration": 8},
-            {"template": ["*", "|"], "duration": 12},
-            {"template": [";"], "duration": -1},
+            {"template": ["'", "|"], "duration": 8},
+            {
+                "template": [
+                    " @",
+                    "@#@",
+                    " @",
+                    " |",
+                    " |",
+                ],
+                "duration": 12,
+            },
+            {
+                "template": [
+                    " .",
+                    ".,.",
+                    " .",
+                    " ;",
+                    " ;",
+                ],
+                "duration": -1,
+            },
         ],
         "colors": {
             Stage.SEED: "white",
             Stage.SPROUT: "green",
-            Stage.BLOOM: "yellow",
+            Stage.BLOOM: "magenta",
             Stage.WILT: "brown",
+        },
+        "char_colors": {
+            "@": "magenta",
+            "#": "yellow",
+            "|": "green",
+            "'": "bright_green",
         },
     },
     "tree": {
@@ -74,6 +106,12 @@ PLANT_TYPES = {
             Stage.BLOOM: "dark_green",
             Stage.WILT: "brown",
         },
+        "char_colors": {
+            "%": "green",
+            "*": "yellow",
+            "|": "brown",
+            ":": "brown",
+        },
     },
     "cactus": {
         "stages": [
@@ -82,7 +120,8 @@ PLANT_TYPES = {
             {
                 "template": [
                     " | ",
-                    "/|\\",
+                    "\\| ",
+                    " |/",
                     " | ",
                     " | ",
                 ],
@@ -91,7 +130,8 @@ PLANT_TYPES = {
             {
                 "template": [
                     " . ",
-                    "/.\\",
+                    "\\. ",
+                    " ./",
                     " . ",
                     " . ",
                 ],
@@ -103,6 +143,10 @@ PLANT_TYPES = {
             Stage.SPROUT: "green",
             Stage.BLOOM: "green",
             Stage.WILT: "brown",
+        },
+        "char_colors": {
+            "/": "green",
+            "\\": "green",
         },
     },
 }

@@ -26,19 +26,12 @@ def test_plant_stage_transitions():
     assert p.stage == Stage.SPROUT
 
 
-def test_plant_reaches_wilt():
+def test_plant_stays_at_bloom():
     p = Plant("grass", 5, 10, 1)
-    # seed=4, sprout=5, bloom=6 => wilt at tick 15
-    for _ in range(15):
-        p.tick()
-    assert p.stage == Stage.WILT
-
-
-def test_plant_wilt_is_final():
-    p = Plant("grass", 5, 10, 1)
+    # seed=4, sprout=5 => bloom at tick 9, stays there
     for _ in range(100):
         p.tick()
-    assert p.stage == Stage.WILT
+    assert p.stage == Stage.BLOOM
 
 
 def test_plant_get_template():

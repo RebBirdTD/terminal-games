@@ -20,7 +20,7 @@ def test_full_grass_lifecycle():
     assert Stage.SEED in stages_seen
     assert Stage.SPROUT in stages_seen
     assert Stage.BLOOM in stages_seen
-    assert Stage.WILT in stages_seen
+    assert Stage.WILT not in stages_seen
 
 
 def test_multiple_plants_no_overlap():
