@@ -35,7 +35,7 @@ class Grid:
         cell = self._cells.get((x, y))
         if not isinstance(cell, tuple) or len(cell) != 3:
             return False
-        return isinstance(cell[0], int) and cell[1] in (".", "v", "w", ",")
+        return isinstance(cell[0], int) and cell[1] in ("⋆", "v", "w", ",")
 
     def can_place(self, root_x: int, root_y: int, template: list[str]) -> bool:
         """Check if a template can be placed at root position.

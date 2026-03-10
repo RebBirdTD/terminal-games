@@ -2,9 +2,10 @@ from terminal_garden.config import PLANT_TYPES, Stage
 
 def test_plant_types_exist():
     assert "grass" in PLANT_TYPES
-    assert "flower" in PLANT_TYPES
+    assert "rose" in PLANT_TYPES
+    assert "tulip" in PLANT_TYPES
+    assert "sunflower" in PLANT_TYPES
     assert "tree" in PLANT_TYPES
-    assert "cactus" in PLANT_TYPES
 
 def test_plant_has_required_fields():
     for name, pt in PLANT_TYPES.items():

@@ -52,10 +52,17 @@ class Plant:
         return cells
 
     def place_on_grid(self, grid):
-        """Place plant on grid for the first time."""
+        """Place plant on grid for the first time.
+
+        Non-grass plants can grow over grass cells.
+        """
         self._clear_from_grid(grid)
         for x, y, ch in self._compute_cells():
-            if grid.is_empty(x, y):
+            can_place = grid.is_empty(x, y)
+            # Non-grass plants override grass cells during growth
+            if not can_place and self.plant_type != "grass" and grid.is_grass(x, y):
+                can_place = True
+            if can_place:
                 grid.set(x, y, (self.plant_id, ch, self.get_char_color(ch)))
                 self._occupied_cells.append((x, y))
 

@@ -8,23 +8,16 @@ class Stage(IntEnum):
     WILT = 3
 
 
-# Each plant type defines 4 stages (seed, sprout, bloom, wilt).
-# Each stage has:
-#   - template: list of strings, each string is one row (relative to root at bottom-center)
-#   - duration: ticks this stage lasts (-1 = permanent/final)
-# Each plant type also has:
-#   - colors: default color per stage (fallback)
-#   - char_colors: per-character color overrides (char -> color name)
-
 TERRAIN_TYPES = {
-    "water": {"char": "~", "color": "blue_fill"},
+    "water": {"char": "~", "color": "blue_fill"},       # sparse wave chars
+    "water_fill": {"char": " ", "color": "blue_fill"},   # solid pond body
     "rock": {"char": "#", "color": "white"},
 }
 
 PLANT_TYPES = {
     "grass": {
         "stages": [
-            {"template": ["."], "duration": 4},
+            {"template": ["⋆"], "duration": 4},
             {"template": ["v"], "duration": 5},
             {"template": ["w"], "duration": 6},
             {"template": [","], "duration": -1},
@@ -35,27 +28,29 @@ PLANT_TYPES = {
             Stage.BLOOM: "bright_green",
             Stage.WILT: "brown",
         },
-        "char_colors": {},
+        "char_colors": {
+            "⋆": "white",
+        },
     },
-    "flower": {
+    "rose": {
         "stages": [
-            {"template": ["."], "duration": 5},
-            {"template": ["'", "|"], "duration": 8},
+            {"template": ["⋆"], "duration": 5},
+            {"template": ["°", "|"], "duration": 8},
             {
                 "template": [
-                    " @",
-                    "@#@",
-                    " @",
-                    " |",
-                    " |",
+                    " ✿",
+                    "❀@❀",
+                    " ✿",
+                    " |~",
+                    "~|",
                 ],
                 "duration": 12,
             },
             {
                 "template": [
-                    " .",
-                    ".,.",
-                    " .",
+                    " °",
+                    "°.°",
+                    " °",
                     " ;",
                     " ;",
                 ],
@@ -69,33 +64,129 @@ PLANT_TYPES = {
             Stage.WILT: "brown",
         },
         "char_colors": {
-            "@": "magenta",
-            "#": "yellow",
+            "❀": "magenta",
+            "✿": "red",
+            "@": "yellow",
             "|": "green",
-            "'": "bright_green",
+            "~": "bright_green",
+            "°": "bright_green",
+            "⋆": "white",
+        },
+    },
+    "tulip": {
+        "stages": [
+            {"template": ["⋆"], "duration": 5},
+            {"template": ["°", "|"], "duration": 8},
+            {
+                "template": [
+                    " ❁",
+                    "(⚘)",
+                    " |~",
+                    "~|",
+                ],
+                "duration": 14,
+            },
+            {
+                "template": [
+                    " °",
+                    "°.°",
+                    " ;",
+                    " ;",
+                ],
+                "duration": -1,
+            },
+        ],
+        "colors": {
+            Stage.SEED: "white",
+            Stage.SPROUT: "green",
+            Stage.BLOOM: "red",
+            Stage.WILT: "brown",
+        },
+        "char_colors": {
+            "⚘": "magenta",
+            "❁": "red",
+            "(": "cyan",
+            ")": "cyan",
+            "|": "green",
+            "~": "bright_green",
+            "°": "bright_green",
+            "⋆": "white",
+        },
+    },
+    "sunflower": {
+        "stages": [
+            {"template": ["⋆"], "duration": 5},
+            {"template": ["°", "|"], "duration": 10},
+            {
+                "template": [
+                    "\\❁/",
+                    "✿@✿",
+                    "/❁\\",
+                    " |~",
+                    "~|",
+                ],
+                "duration": 15,
+            },
+            {
+                "template": [
+                    "...",
+                    ".,.",
+                    "...",
+                    " ;",
+                    " ;",
+                ],
+                "duration": -1,
+            },
+        ],
+        "colors": {
+            Stage.SEED: "white",
+            Stage.SPROUT: "green",
+            Stage.BLOOM: "yellow",
+            Stage.WILT: "brown",
+        },
+        "char_colors": {
+            "✿": "yellow",
+            "❁": "red",
+            "@": "brown",
+            "\\": "yellow",
+            "/": "yellow",
+            "|": "green",
+            "~": "bright_green",
+            "°": "bright_green",
+            "⋆": "white",
         },
     },
     "tree": {
         "stages": [
-            {"template": ["."], "duration": 10},
+            {"template": ["⋆"], "duration": 10},
             {"template": ["|", "|"], "duration": 15},
             {
                 "template": [
-                    "  %%%  ",
-                    " %%%%% ",
-                    "%%%*%%%",
-                    "  |||  ",
-                    "  |||  ",
+                    "    %    ",
+                    "  %%%%%  ",
+                    " %%%%%%% ",
+                    "%%%%%%%%%",
+                    " %%%*%%% ",
+                    "%%%%%%%%%",
+                    "  %%%%%  ",
+                    "    |    ",
+                    "    |    ",
+                    "    |    ",
                 ],
                 "duration": 25,
             },
             {
                 "template": [
-                    "  ...  ",
-                    " ..... ",
-                    "...:...",
-                    "  |||  ",
-                    "  |||  ",
+                    "    .    ",
+                    "  .....  ",
+                    " ....... ",
+                    ".........",
+                    " ...:... ",
+                    ".........",
+                    "  .....  ",
+                    "    |    ",
+                    "    |    ",
+                    "    |    ",
                 ],
                 "duration": -1,
             },
@@ -111,42 +202,7 @@ PLANT_TYPES = {
             "*": "yellow",
             "|": "brown",
             ":": "brown",
-        },
-    },
-    "cactus": {
-        "stages": [
-            {"template": ["."], "duration": 8},
-            {"template": ["|", "|"], "duration": 12},
-            {
-                "template": [
-                    " | ",
-                    "\\| ",
-                    " |/",
-                    " | ",
-                    " | ",
-                ],
-                "duration": 20,
-            },
-            {
-                "template": [
-                    " . ",
-                    "\\. ",
-                    " ./",
-                    " . ",
-                    " . ",
-                ],
-                "duration": -1,
-            },
-        ],
-        "colors": {
-            Stage.SEED: "white",
-            Stage.SPROUT: "green",
-            Stage.BLOOM: "green",
-            Stage.WILT: "brown",
-        },
-        "char_colors": {
-            "/": "green",
-            "\\": "green",
+            "⋆": "white",
         },
     },
 }

@@ -1,49 +1,96 @@
 import curses
+import math
 import random
 from terminal_garden.config import TERRAIN_TYPES
 from terminal_garden.grid import Grid
 from terminal_garden.plants import Plant
-from terminal_garden.renderer import init_colors, render_frame
+from terminal_garden.renderer import init_colors, render_frame, SIDEBAR_WIDTH
 
-PLANT_NAMES = ["grass", "flower", "tree", "cactus"]
+PLANT_NAMES = ["grass", "rose", "tulip", "sunflower", "tree"]
 SPEED_LEVELS = [2, 5, 10, 20, 40]  # ticks per second (via halfdelay)
 
 
+def _generate_blob(cx, cy, size, grid_width, grid_height):
+    """Generate an organic blob shape using random-walk overlapping circles."""
+    cells = set()
+    # Start with a small circle at center
+    for dy in range(-2, 3):
+        for dx in range(-3, 4):
+            if dx * dx / 9 + dy * dy / 4 <= 1:
+                cells.add((cx + dx, cy + dy))
+
+    # Random walk: place overlapping circles to form organic shape
+    wx, wy = float(cx), float(cy)
+    for _ in range(size):
+        angle = random.uniform(0, 6.283)
+        step = random.uniform(1.0, 2.5)
+        wx += step * math.cos(angle)
+        wy += step * math.sin(angle) * 0.5  # squash vertically
+        # Keep walker near center
+        wx = max(cx - 10, min(cx + 10, wx))
+        wy = max(cy - 5, min(cy + 5, wy))
+        r = random.uniform(1.5, 3.5)
+        for dy in range(int(wy - r) - 1, int(wy + r) + 2):
+            for dx in range(int(wx - r * 1.5) - 1, int(wx + r * 1.5) + 2):
+                if (dx - wx) ** 2 / (r * 1.5) ** 2 + (dy - wy) ** 2 / r ** 2 <= 1:
+                    if 0 <= dx < grid_width and 0 <= dy < grid_height:
+                        cells.add((dx, dy))
+    return cells
+
+
 def generate_terrain(grid):
-    """Place random water ponds and rocks on the grid."""
-    water = TERRAIN_TYPES["water"]
-    all_water = set()
+    """Place organic water ponds and rocks on the grid."""
+    water_wave = TERRAIN_TYPES["water"]
+    water_fill = TERRAIN_TYPES["water_fill"]
 
-    # Water ponds: 2-3 solid ellipses with organic edges
-    num_ponds = random.randint(2, 3)
+    # Water ponds: 1-2 organic blobs
+    num_ponds = random.randint(1, 2)
     for _ in range(num_ponds):
-        cx = random.randint(10, grid.width - 11)
-        cy = random.randint(5, grid.height - 6)
-        rx = random.randint(4, 8)   # horizontal radius
-        ry = random.randint(2, 4)   # vertical radius
-        for dy in range(-ry, ry + 1):
-            for dx in range(-rx, rx + 1):
-                # Ellipse equation + slight noise on the boundary
-                dist = (dx / rx) ** 2 + (dy / ry) ** 2
-                threshold = 1.0 + random.uniform(-0.12, 0.12)
-                if dist <= threshold:
-                    px, py = cx + dx, cy + dy
-                    if grid.in_bounds(px, py):
-                        all_water.add((px, py))
+        cx = random.randint(12, grid.width - 13)
+        cy = random.randint(6, grid.height - 7)
+        blob_size = random.randint(8, 15)
+        all_water = _generate_blob(cx, cy, blob_size, grid.width, grid.height)
 
-    # Place water cells
-    for px, py in all_water:
-        if grid.is_empty(px, py):
-            grid.set_terrain(px, py, water["char"], water["color"])
+        # Find interior cells (all 4 neighbors also in water)
+        interior = set()
+        for px, py in all_water:
+            if all((px + dx, py + dy) in all_water
+                   for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]):
+                interior.add((px, py))
 
-    # Rocks: 5-10 scattered
+        # Place all water cells as solid fill
+        for px, py in all_water:
+            if grid.is_empty(px, py):
+                grid.set_terrain(px, py, water_fill["char"], water_fill["color"])
+
+        # Add sparse wave bands: pick 2-4 y-levels, place short ~ runs
+        if interior:
+            y_values = sorted(set(py for _, py in interior))
+            num_bands = min(random.randint(2, 4), len(y_values))
+            band_ys = random.sample(y_values, num_bands)
+            for by in band_ys:
+                row_cells = sorted(px for px, py in interior if py == by)
+                if len(row_cells) < 3:
+                    continue
+                # Pick a random starting x within the row, place 2-4 waves
+                start_idx = random.randint(0, max(0, len(row_cells) - 3))
+                wave_len = random.randint(2, min(4, len(row_cells) - start_idx))
+                for i in range(start_idx, start_idx + wave_len):
+                    wx = row_cells[i]
+                    grid.set_terrain(wx, by, water_wave["char"], water_wave["color"])
+
+    # Rocks: scattered in slightly bigger clusters
     rock = TERRAIN_TYPES["rock"]
-    num_rocks = random.randint(5, 10)
-    for _ in range(num_rocks):
+    num_clusters = random.randint(3, 6)
+    for _ in range(num_clusters):
         rx = random.randint(0, grid.width - 1)
         ry = random.randint(0, grid.height - 1)
-        if grid.is_empty(rx, ry):
-            grid.set_terrain(rx, ry, rock["char"], rock["color"])
+        cluster_size = random.randint(2, 5)
+        for _ in range(cluster_size):
+            ox = rx + random.randint(-2, 2)
+            oy = ry + random.randint(-1, 1)
+            if grid.is_empty(ox, oy):
+                grid.set_terrain(ox, oy, rock["char"], rock["color"])
 
 
 def main(stdscr):
@@ -55,11 +102,12 @@ def main(stdscr):
 
     max_y, max_x = stdscr.getmaxyx()
 
-    # Game state
-    grid = Grid(max_x, max_y - 1)  # reserve bottom row for status
+    # Game state - grid excludes sidebar width
+    grid_width = max_x - SIDEBAR_WIDTH
+    grid = Grid(grid_width, max_y - 1)  # reserve bottom row for status
     plants: list[Plant] = []
     next_id = 1
-    cursor_x = max_x // 2
+    cursor_x = grid_width // 2
     cursor_y = max_y // 2
     selected = 0  # index into PLANT_NAMES
     paused = False
@@ -96,10 +144,11 @@ def main(stdscr):
         status = (
             f" [{plant_name}] | Tick: {tick_count} | {speed_label} | "
             f"Plants: {len(plants)} | {pause_label} |{msg_display} "
-            f"1-4:Plant  P:Pause  +/-:Speed  Q:Quit "
+            f"1-5:Plant  P:Pause  +/-:Speed  Q:Quit "
         )
 
-        render_frame(stdscr, grid, plants, cursor_x, cursor_y, status)
+        render_frame(stdscr, grid, plants, cursor_x, cursor_y, status,
+                     selected=selected)
 
         # Handle input
         try:
@@ -118,10 +167,10 @@ def main(stdscr):
         elif key == curses.KEY_LEFT or key == ord("h"):
             cursor_x = max(0, cursor_x - 1)
         elif key == curses.KEY_RIGHT or key == ord("l"):
-            cursor_x = min(max_x - 1, cursor_x + 1)
+            cursor_x = min(grid_width - 1, cursor_x + 1)
 
-        # Plant selection
-        elif key in (ord("1"), ord("2"), ord("3"), ord("4")):
+        # Plant selection (1-6)
+        elif key in (ord("1"), ord("2"), ord("3"), ord("4"), ord("5")):
             selected = key - ord("1")
 
         # Place plant
@@ -165,7 +214,8 @@ def main(stdscr):
         # Handle terminal resize
         if key == curses.KEY_RESIZE:
             max_y, max_x = stdscr.getmaxyx()
-            cursor_x = min(cursor_x, max_x - 1)
+            grid_width = max_x - SIDEBAR_WIDTH
+            cursor_x = min(cursor_x, grid_width - 1)
             cursor_y = min(cursor_y, max_y - 2)
 
         # Update game state

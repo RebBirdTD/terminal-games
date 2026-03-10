@@ -36,7 +36,7 @@ def test_plant_stays_at_bloom():
 
 def test_plant_get_template():
     p = Plant("grass", 5, 10, 1)
-    assert p.get_template() == ["."]
+    assert p.get_template() == ["⋆"]
     for _ in range(4):
         p.tick()
     assert p.get_template() == ["v"]
@@ -59,11 +59,11 @@ def test_plant_place_on_grid():
 
 def test_plant_update_grid_on_stage_change():
     g = Grid(20, 20)
-    p = Plant("flower", 5, 10, 1)
+    p = Plant("rose", 5, 10, 1)
     p.place_on_grid(g)
-    # Advance to sprout (flower seed duration = 5)
+    # Advance to sprout (rose seed duration = 5)
     for _ in range(5):
         p.tick()
     p.update_grid(g)
-    # Flower sprout template is ["|"], so root cell should still be occupied
+    # Rose sprout template is ["|"], so root cell should still be occupied
     assert not g.is_empty(5, 10)
